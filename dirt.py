@@ -3,7 +3,7 @@ from pygame.locals import *
 
 # FUNCTIONS AND
 def drawTile(tileType, x, y):
-    imageLoad = (pygame.transform.scale(pygame.image.load('tiles/'+tileType+'.png'), (tileSizeX, tileSizeY))).convert()
+    imageLoad = (pygame.transform.scale(pygame.image.load('tiles/'+tileType+'.png').convert(), (tileSizeX, tileSizeY))).convert()
     DISPLAYSURF.blit((imageLoad), (x-camera.x, y-camera.y))
             
 def drawRow(layer, row):
@@ -94,10 +94,10 @@ os.environ["SDL_VIDEO_CENTERED"] = "1"
 pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.init()
 tileSizeX, tileSizeY = 72, 72
-screenX, screenY = tileSizeX*16, tileSizeY*9
+tileRows, tileColumns = 16, 9
+screenX, screenY = tileSizeX*tileRows, tileSizeY*tileColumns
 playerSizeX, playerSizeY = 27, 72
-flags = DOUBLEBUF | HWACCEL
-DISPLAYSURF = pygame.display.set_mode((screenX, screenY), flags)
+DISPLAYSURF = pygame.display.set_mode((screenX, screenY), FULLSCREEN|HWSURFACE|DOUBLEBUF)
 pygame.display.set_caption('Dirt')
 FPS = 30
 fpsClock = pygame.time.Clock()
@@ -109,16 +109,16 @@ camera = pygame.rect.Rect(0, 0, screenX, screenY)
 font = pygame.font.Font(None, 36)
 
 # SPRITES
-pLeft = pygame.transform.scale((pygame.image.load('sprites/playerleft.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
-pRight = pygame.transform.scale((pygame.image.load('sprites/playerright.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
-pLeftBA = pygame.transform.scale((pygame.image.load('sprites/playerleftba.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
-pRightBA = pygame.transform.scale((pygame.image.load('sprites/playerrightba.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
-pLeftWA = pygame.transform.scale((pygame.image.load('sprites/playerleftwa.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
-pRightWA = pygame.transform.scale((pygame.image.load('sprites/playerrightwa.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
-pLeftWB = pygame.transform.scale((pygame.image.load('sprites/playerleftwb.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
-pRightWB = pygame.transform.scale((pygame.image.load('sprites/playerrightwb.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
-pRightSA = pygame.transform.scale((pygame.image.load('sprites/playerrightsa.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
-pLeftSA = pygame.transform.scale((pygame.image.load('sprites/playerleftsa.png')), (playerSizeX+15, playerSizeY)).convert_alpha()
+pLeft = pygame.transform.scale((pygame.image.load('sprites/playerleft.png').convert_alpha()), (playerSizeX+15, playerSizeY))
+pRight = pygame.transform.scale((pygame.image.load('sprites/playerright.png').convert_alpha()), (playerSizeX+15, playerSizeY))
+pLeftBA = pygame.transform.scale((pygame.image.load('sprites/playerleftba.png').convert_alpha()), (playerSizeX+15, playerSizeY))
+pRightBA = pygame.transform.scale((pygame.image.load('sprites/playerrightba.png').convert_alpha()), (playerSizeX+15, playerSizeY))
+pLeftWA = pygame.transform.scale((pygame.image.load('sprites/playerleftwa.png').convert_alpha()), (playerSizeX+15, playerSizeY))
+pRightWA = pygame.transform.scale((pygame.image.load('sprites/playerrightwa.png').convert_alpha()), (playerSizeX+15, playerSizeY))
+pLeftWB = pygame.transform.scale((pygame.image.load('sprites/playerleftwb.png').convert_alpha()), (playerSizeX+15, playerSizeY))
+pRightWB = pygame.transform.scale((pygame.image.load('sprites/playerrightwb.png').convert_alpha()), (playerSizeX+15, playerSizeY))
+pRightSA = pygame.transform.scale((pygame.image.load('sprites/playerrightsa.png').convert_alpha()), (playerSizeX+15, playerSizeY))
+pLeftSA = pygame.transform.scale((pygame.image.load('sprites/playerleftsa.png').convert_alpha()), (playerSizeX+15, playerSizeY))
 
 pRightWalk = {'walk0':pRightWA, 'walk1':pRight, 'walk2':pRightWB, 'walk3':pRight}
 pLeftWalk = {'walk0':pLeftWA, 'walk1':pLeft, 'walk2':pLeftWB, 'walk3':pLeft}
@@ -161,12 +161,13 @@ while True:
             rowC += 1  
         levelFile.close()
         newLevel = False
-        # DRAW MAP
-        DISPLAYSURF.fill((0, 220, 255))
-        x = y = 0
-        solids = []
-        for row in levelMap:
-            for col in row:
+    # DRAW MAP
+    DISPLAYSURF.fill((0, 220, 255))
+    x = y = 0
+    solids = []
+    for row in levelMap:
+        for col in row:
+            if x-camera.x<= screenX and y-camera.y <= screenY and x-camera.x>=-tileSizeX and y-camera.y>=-tileSizeY:
                 if col == '+':
                     drawTile('sky', x, y)
 
@@ -188,40 +189,12 @@ while True:
                     drawTile('dug', x, y)
                     NPC(x, y)
                     NPC.draw('playerleft', x, y)
-                x += tileSizeX
-            y += tileSizeY
-            x = 0
-
-    # DRAW AGAIN
-    DISPLAYSURF.fill((0, 220, 255))
-    x = y = 0
-    solids = []
-    for row in levelMap:
-        for col in row:
-            if col == '+':
-                drawTile('sky', x, y)
-
-            elif col == '0':
-                drawTile('stone', x, y)
-                Solid((x, y))
-            elif col == '=':
-                drawTile('grass', x, y)
-                Solid((x, y))
-            elif col == '-':
-                drawTile('dirt', x, y)
-                Solid((x, y))
-            elif col == 'x':
-                drawTile('dug', x, y)
-                
-            elif col == '$':
-                npcSizeX = 27+15
-                npcSizeY = 72
-                drawTile('dug', x, y)
-                NPC(x, y)
-                NPC.draw('playerleft', x, y)
+                    
             x += tileSizeX
         y += tileSizeY
         x = 0
+
+    
         
     # GRAVITY
     playerOnGround = False
@@ -406,7 +379,8 @@ while True:
     
     DISPLAYSURF.blit(playerSprite, (player.rect.x-7, player.rect.y))
     fpsClock.tick(FPS)
-    showfps = font.render(str(int(fpsClock.get_fps())), 1, (10, 10, 10))
+    showfps = font.render(str(int(fpsClock.get_fps())), 1, (0, 255, 0))
     DISPLAYSURF.blit(showfps, (10, 10))
+    
     pygame.display.update(0, 0, screenX, screenY)
     
